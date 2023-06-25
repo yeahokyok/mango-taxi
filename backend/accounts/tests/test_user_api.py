@@ -22,3 +22,15 @@ class AuthenticationTest(APITestCase):
         self.assertEqual(response.data["username"], user.username)
         self.assertEqual(response.data["first_name"], user.first_name)
         self.assertEqual(response.data["last_name"], user.last_name)
+
+    def test_user_cannot_sign_up_with_unmatched_passwords(self):
+        response = self.client.post(
+            reverse("sign_up"),
+            data={
+                "username": "testuser",
+                "password1": "testpassword",
+                "password2": "testpassword2",
+            },
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual(response.data, {"non_field_errors": ["Passwords must match."]})
