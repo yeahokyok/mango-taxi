@@ -1,3 +1,5 @@
+import base64
+import json
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -56,3 +58,27 @@ class AuthenticationTest(APITestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         self.assertEqual(response.data["password1"], ["This field is required."])
         self.assertEqual(response.data["password2"], ["This field is required."])
+
+    def test_user_can_log_in(self):
+        user = get_user_model().objects.create_user(
+            username="testuser", password="testpassword"
+        )
+        response = self.client.post(
+            reverse("login"),
+            data={
+                "username": "testuser",
+                "password": "testpassword",
+            },
+        )
+        # Parse payload data from access token.
+        access = response.data["access"]
+        header, payload, signature = access.split(".")
+        decoded_payload = base64.b64decode(f"{payload}==")
+        payload_data = json.loads(decoded_payload)
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertIsNotNone(response.data["refresh"])
+        self.assertEqual(payload_data["id"], user.id)
+        self.assertEqual(payload_data["username"], user.username)
+        self.assertEqual(payload_data["first_name"], user.first_name)
+        self.assertEqual(payload_data["last_name"], user.last_name)
