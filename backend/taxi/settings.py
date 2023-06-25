@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third party apps
+    "channels",
     "rest_framework",
     # Local apps
     "accounts",
@@ -77,6 +78,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "taxi.wsgi.application"
+
+ASGI_APPLICATION = "taxi.asgi.application"
 
 
 # Database
@@ -127,3 +130,14 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
+
+REDIS_URL = env.str("REDIS_URL")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
