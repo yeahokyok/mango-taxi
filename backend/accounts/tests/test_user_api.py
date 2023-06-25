@@ -34,3 +34,14 @@ class AuthenticationTest(APITestCase):
         )
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         self.assertEqual(response.data, {"non_field_errors": ["Passwords must match."]})
+
+    def test_user_cannot_sign_up_without_username(self):
+        response = self.client.post(
+            reverse("sign_up"),
+            data={
+                "password1": "testpassword",
+                "password2": "testpassword",
+            },
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual(response.data, {"username": ["This field is required."]})
