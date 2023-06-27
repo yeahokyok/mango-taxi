@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
 from channels.layers import get_channel_layer
@@ -15,9 +16,16 @@ TEST_CHANNEL_LAYERS = {
 
 
 @database_sync_to_async
-def create_user(username, password):
+def create_user(username, password, group="rider"):
     user = get_user_model().objects.create_user(username=username, password=password)
+
+    user_group, _ = Group.objects.get_or_create(name=group)
+    user.groups.add(user_group)
+    user.save()
+
+    # Create access token for the user
     access = AccessToken.for_user(user)
+
     return user, access
 
 
@@ -36,7 +44,10 @@ class TestWebSocket:
 
     async def test_can_send_and_receive_messages(self, settings):
         settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
-        communicator = WebsocketCommunicator(application=application, path="/taxi/")
+        _, access = await create_user(username="test", password="testpassword")
+        communicator = WebsocketCommunicator(
+            application=application, path=f"/taxi/?token={access}"
+        )
         connected, _ = await communicator.connect()
         message = {
             "type": "echo.message",
@@ -53,3 +64,22 @@ class TestWebSocket:
         communicator = WebsocketCommunicator(application=application, path="/taxi/")
         connected, _ = await communicator.connect()
         assert connected is False
+
+    async def test_join_driver_pool(self, settings):
+        settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
+        _, access = await create_user(
+            username="test", password="testpassword", group="driver"
+        )
+        communicator = WebsocketCommunicator(
+            application=application, path=f"/taxi/?token={access}"
+        )
+        connected, _ = await communicator.connect()
+        message = {
+            "type": "echo.message",
+            "data": "This is a test message.",
+        }
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send("drivers", message=message)
+        response = await communicator.receive_json_from()
+        assert response == message
+        await communicator.disconnect()
