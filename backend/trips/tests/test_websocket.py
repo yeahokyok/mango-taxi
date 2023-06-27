@@ -1,5 +1,9 @@
-from channels.testing import WebsocketCommunicator
 import pytest
+from django.contrib.auth import get_user_model
+from channels.db import database_sync_to_async
+from channels.testing import WebsocketCommunicator
+from channels.layers import get_channel_layer
+from rest_framework_simplejwt.tokens import AccessToken
 
 from taxi.asgi import application
 
@@ -10,11 +14,22 @@ TEST_CHANNEL_LAYERS = {
 }
 
 
+@database_sync_to_async
+def create_user(username, password):
+    user = get_user_model().objects.create_user(username=username, password=password)
+    access = AccessToken.for_user(user)
+    return user, access
+
+
 @pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
 class TestWebSocket:
     async def test_can_connect_to_server(self, settings):
         settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
-        communicator = WebsocketCommunicator(application=application, path="/taxi/")
+        _, access = await create_user(username="test", password="testpassword")
+        communicator = WebsocketCommunicator(
+            application=application, path=f"/taxi/?token={access}"
+        )
         connected, _ = await communicator.connect()
         assert connected is True
         await communicator.disconnect()
@@ -32,3 +47,9 @@ class TestWebSocket:
 
         assert response == message
         await communicator.disconnect()
+
+    async def test_cannot_connect_to_socket(self, settings):
+        settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
+        communicator = WebsocketCommunicator(application=application, path="/taxi/")
+        connected, _ = await communicator.connect()
+        assert connected is False

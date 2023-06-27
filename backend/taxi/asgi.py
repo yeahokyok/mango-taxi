@@ -13,6 +13,7 @@ from django.urls import path
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 from trips.consumers import TaxiConsumer
+from taxi.middleware import TokenAuthMiddlewareStack
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taxi.settings")
 
@@ -20,10 +21,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taxi.settings")
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": URLRouter(
-            [
-                path("taxi/", TaxiConsumer.as_asgi()),
-            ]
+        "websocket": TokenAuthMiddlewareStack(
+            URLRouter(
+                [
+                    path("taxi/", TaxiConsumer.as_asgi()),
+                ]
+            )
         ),
     }
 )
