@@ -12,3 +12,10 @@ class TripSerializer(serializers.ModelSerializer):
             "created",
             "updated",
         )
+
+
+class NestedTripSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trip
+        fields = "__all__"
+        depth = 1

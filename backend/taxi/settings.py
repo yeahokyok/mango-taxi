@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import datetime
+import os
 from pathlib import Path
 from environs import Env
 
@@ -157,3 +158,5 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=1),
     "USER_ID_CLAIM": "id",
 }
+
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
