@@ -24,9 +24,7 @@ def get_user(scope):
         user = User.objects.get(id=access_token["id"])
     except Exception as exception:
         return AnonymousUser()
-    if not user.is_active:
-        return AnonymousUser()
-    return user
+    return user if user.is_active else AnonymousUser()
 
 
 class TokenAuthMiddleware(AuthMiddleware):
