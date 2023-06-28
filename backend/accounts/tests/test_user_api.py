@@ -16,6 +16,7 @@ class AuthenticationTest(APITestCase):
                 "last_name": "User",
                 "password1": "testpassword",
                 "password2": "testpassword",
+                "group": "rider",
             },
         )
         user = get_user_model().objects.last()
@@ -24,6 +25,7 @@ class AuthenticationTest(APITestCase):
         self.assertEqual(response.data["username"], user.username)
         self.assertEqual(response.data["first_name"], user.first_name)
         self.assertEqual(response.data["last_name"], user.last_name)
+        self.assertEqual(response.data["group"], user.group)
 
     def test_user_cannot_sign_up_with_unmatched_passwords(self):
         response = self.client.post(
@@ -32,6 +34,7 @@ class AuthenticationTest(APITestCase):
                 "username": "testuser",
                 "password1": "testpassword",
                 "password2": "testpassword2",
+                "group": "rider",
             },
         )
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -43,6 +46,7 @@ class AuthenticationTest(APITestCase):
             data={
                 "password1": "testpassword",
                 "password2": "testpassword",
+                "group": "rider",
             },
         )
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
