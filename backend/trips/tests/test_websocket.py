@@ -273,3 +273,28 @@ class TestWebSocket:
         assert response_data["driver"]["username"] == driver.username
 
         await communicator.disconnect()
+
+    async def test_driver_join_trip_group_on_connect(self, settings):
+        settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
+        driver, access = await create_user(
+            username="test_driver", password="testpassword", group="driver"
+        )
+        trip = await create_trip(driver=driver)
+        communicator = WebsocketCommunicator(
+            application=application, path=f"/taxi/?token={access}"
+        )
+        connected, _ = await communicator.connect()
+
+        # Send a message to the trip group.
+        message = {
+            "type": "echo.message",
+            "data": "This is a test message.",
+        }
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(f"{trip.id}", message=message)
+
+        # Rider receives message.
+        response = await communicator.receive_json_from()
+        assert response == message
+
+        await communicator.disconnect()
