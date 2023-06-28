@@ -1,13 +1,31 @@
 import base64
 import json
+import os
+from io import BytesIO
+from PIL import Image
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 
+def create_photo_file():
+    data = BytesIO()
+    Image.new("RGB", (100, 100)).save(data, "PNG")
+    data.seek(0)
+    return SimpleUploadedFile("photo.png", data.getvalue())
+
+
 class AuthenticationTest(APITestCase):
+    def tearDown(self):
+        photo_path = os.path.join(settings.MEDIA_ROOT, "photos", "photo.png")
+        if os.path.isfile(photo_path):
+            os.remove(photo_path)
+
     def test_user_can_sign_up(self):
+        photo_file = create_photo_file()
         response = self.client.post(
             reverse("sign_up"),
             data={
@@ -17,6 +35,7 @@ class AuthenticationTest(APITestCase):
                 "password1": "testpassword",
                 "password2": "testpassword",
                 "group": "rider",
+                "photo": photo_file,
             },
         )
         user = get_user_model().objects.last()
