@@ -13,7 +13,7 @@ describe("Navigation", function () {
     it("Can navigate to home from sign up", function () {
         cy.visit("/#/signup")
         cy.get("a").contains("Home").click()
-        cy.hash().should("eq", "#/")
+        cy.hash().should("eq", "")
     })
 
     it("Can navigate to log in from sign up", function () {
@@ -25,7 +25,7 @@ describe("Navigation", function () {
     it("Can navigate to home from log in", function () {
         cy.visit("/#/login")
         cy.get("a").contains("Home").click()
-        cy.hash().should("eq", "#/")
+        cy.hash().should("eq", "")
     })
 
     it("Can navigate to sign up from log in", function () {
